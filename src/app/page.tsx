@@ -7,6 +7,7 @@ import NoiseTexture from "@/components/NoiseTexture";
 import SplitDoors from "@/components/SplitDoors";
 import WelcomeReveal from "@/components/WelcomeReveal";
 import InvitationHomepage from "@/components/InvitationHomepage";
+import { ShootingStars } from "@/components/ui/shooting-stars";
 
 interface Ripple {
   id: number;
@@ -168,6 +169,34 @@ export default function Home() {
           }}
         >
           <BackgroundGlow isButtonHovered={isBtnHovered} />
+          {phase === "cover" && (
+            <>
+              <ShootingStars
+                starColor="#9E00FF"
+                trailColor="#2EB9DF"
+                minSpeed={15}
+                maxSpeed={35}
+                minDelay={1000}
+                maxDelay={3000}
+              />
+              <ShootingStars
+                starColor="#FF0099"
+                trailColor="#FFB800"
+                minSpeed={10}
+                maxSpeed={25}
+                minDelay={2000}
+                maxDelay={4000}
+              />
+              <ShootingStars
+                starColor="#00FF9E"
+                trailColor="#00B8FF"
+                minSpeed={20}
+                maxSpeed={40}
+                minDelay={1500}
+                maxDelay={3500}
+              />
+            </>
+          )}
         </motion.div>
 
         {/* Animated film grain noise */}

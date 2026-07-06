@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, Variants, useScroll, useSpring } from "framer-motion";
+import RSVPFlow from "@/components/RSVPFlow";
 
 interface InvitationHomepageProps {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -165,10 +166,10 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
 
   const cardHoverVariants: Variants = {
     hover: {
-      y: -6,
-      borderColor: "rgba(245, 239, 200, 0.3)",
-      boxShadow: "0 12px 40px rgba(0, 0, 0, 0.45), 0 0 15px rgba(165, 188, 214, 0.1)",
-      transition: { duration: 0.3, ease: "easeOut" },
+      y: -8,
+      scale: 1.02,
+      borderColor: "rgba(245, 239, 200, 0.35)",
+      boxShadow: "0 22px 45px -15px rgba(0, 0, 0, 0.75), 0 0 20px rgba(245, 239, 200, 0.07)",
     },
   };
 
@@ -303,19 +304,29 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
                 key={idx}
                 variants={cardHoverVariants}
                 whileHover="hover"
-                className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/12 bg-[#4D0E12]/5 backdrop-blur-md p-6 flex flex-col items-start space-y-4 cursor-default shadow-lg"
+                transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 flex flex-col items-start space-y-4 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
               >
-                <div className="absolute inset-0 bg-gradient-to-b from-[#A5BCD6]/5 to-transparent pointer-events-none" />
-                <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(165,188,214,0.3)] select-none">
-                  {detail.icon}
-                </span>
-                <div className="space-y-1">
+                {/* Subtle traveling shimmer */}
+                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+                
+                {/* Icon wrapper with glow */}
+                <div className="relative p-2.5 rounded-full bg-[#F5EFC8]/[0.02] border border-[#F5EFC8]/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] flex items-center justify-center overflow-hidden">
+                  <div className="absolute inset-0 bg-[#F5EFC8]/[0.03] blur-[6px] rounded-full" />
+                  <span className="relative z-10 text-3xl filter drop-shadow-[0_0_6px_rgba(245,239,200,0.2)] select-none">
+                    {detail.icon}
+                  </span>
+                </div>
+
+                <div className="space-y-1 w-full">
                   <h3 className="text-xs uppercase tracking-[0.2em] font-sans font-light text-[#A5BCD6]/70">
                     {detail.label}
                   </h3>
                   <p className="text-base font-sans font-light text-[#F5EFC8]">
                     {detail.value}
                   </p>
+                  {/* Small decorative line under important text */}
+                  <div className="w-8 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mt-2" />
                 </div>
               </motion.div>
             ))}
@@ -365,31 +376,59 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Guest 1 */}
-            <div className="rounded-2xl border border-[#F5EFC8]/10 bg-[#231815]/40 backdrop-blur-sm p-6 space-y-2">
+            <motion.div 
+              variants={cardHoverVariants}
+              whileHover="hover"
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 space-y-2 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+            >
+              {/* Subtle traveling shimmer */}
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+
               <h3 className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/60">
                 President of Rotary Club of Bangalore
               </h3>
               <p className="text-lg font-serif italic text-transparent-yellow font-medium">
                 RTN Vineetha Chinappa
               </p>
-            </div>
+              {/* Small decorative line under important text */}
+              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mt-2" />
+            </motion.div>
 
             {/* Guest 2 */}
-            <div className="rounded-2xl border border-[#F5EFC8]/10 bg-[#231815]/40 backdrop-blur-sm p-6 space-y-2">
+            <motion.div 
+              variants={cardHoverVariants}
+              whileHover="hover"
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 space-y-2 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+            >
+              {/* Subtle traveling shimmer */}
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+
               <h3 className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/60">
                 Guest of Honor
               </h3>
               <p className="text-lg font-serif italic text-transparent-yellow font-medium">
                 RTN Anju Agadi
               </p>
-              <p className="text-xs font-sans font-light tracking-wider text-[#A5BCD6]/80 leading-relaxed">
+              {/* Small decorative line under important text */}
+              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mt-2" />
+              <p className="text-xs font-sans font-light tracking-wider text-[#A5BCD6]/80 leading-relaxed pt-1">
                 Youth Service Director <br /> Rotary Club of Bangalore
               </p>
-            </div>
+            </motion.div>
           </div>
 
           {/* Induction detail */}
-          <div className="rounded-2xl border border-[#F5EFC8]/10 bg-[#4D0E12]/10 backdrop-blur-sm p-6 sm:p-8 text-center space-y-3">
+          <motion.div 
+            variants={cardHoverVariants}
+            whileHover="hover"
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#4D0E12]/8 backdrop-blur-md p-6 sm:p-8 text-center space-y-3 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+          >
+            {/* Subtle traveling shimmer */}
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+
             <h3 className="text-xs font-sans uppercase tracking-[0.25em] text-[#A5BCD6]/60">
               Induction Ceremony
             </h3>
@@ -400,7 +439,9 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
             <p className="text-lg font-serif italic text-cerulean-blue font-medium mt-2 text-center">
               PHF RTR.RTN Sanjay R.
             </p>
-          </div>
+            {/* Small decorative line under important text */}
+            <div className="w-16 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mx-auto mt-2" />
+          </motion.div>
         </div>
 
         {/* SECTION 3: Leadership */}
@@ -446,28 +487,56 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Incoming */}
-            <div className="rounded-2xl border border-[#F5EFC8]/10 bg-[#231815]/40 backdrop-blur-sm p-6 space-y-2">
+            <motion.div 
+              variants={cardHoverVariants}
+              whileHover="hover"
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 space-y-2 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+            >
+              {/* Subtle traveling shimmer */}
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+
               <h3 className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/60">
                 Incoming President
               </h3>
               <p className="text-xl font-serif italic text-transparent-yellow font-semibold">
                 RTR Vigneswaran
               </p>
-            </div>
+              {/* Small decorative line under important text */}
+              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mt-2" />
+            </motion.div>
 
             {/* Outgoing */}
-            <div className="rounded-2xl border border-[#F5EFC8]/10 bg-[#231815]/40 backdrop-blur-sm p-6 space-y-2">
+            <motion.div 
+              variants={cardHoverVariants}
+              whileHover="hover"
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 space-y-2 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+            >
+              {/* Subtle traveling shimmer */}
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+
               <h3 className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/60">
                 Outgoing President
               </h3>
               <p className="text-xl font-serif italic text-white/80">
                 RTR Dr. Harish
               </p>
-            </div>
+              {/* Small decorative line under important text */}
+              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mt-2" />
+            </motion.div>
           </div>
 
           {/* Board of Directors */}
-          <div className="rounded-2xl border border-[#F5EFC8]/10 bg-[#231815]/40 backdrop-blur-sm p-6 sm:p-8 space-y-4">
+          <motion.div 
+            variants={cardHoverVariants}
+            whileHover="hover"
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 sm:p-8 space-y-4 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+          >
+            {/* Subtle traveling shimmer */}
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+
             <h3 className="text-xs font-sans uppercase tracking-widest text-center text-[#A5BCD6]/60">
               Board of Directors
             </h3>
@@ -479,8 +548,10 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
               <p className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/70 mt-1">
                 Secretary
               </p>
+              {/* Small decorative line under important text */}
+              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mx-auto mt-2" />
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* SECTION 4: RSVP */}
@@ -525,7 +596,15 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
             <span className="w-10 h-[1px] bg-[#F5EFC8]/10" />
           </h2>
 
-          <div className="rounded-2xl border border-[#F5EFC8]/10 bg-[#231815]/40 backdrop-blur-sm p-6 sm:p-8 text-center space-y-4">
+          <motion.div 
+            variants={cardHoverVariants}
+            whileHover="hover"
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 sm:p-8 text-center space-y-4 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+          >
+            {/* Subtle traveling shimmer */}
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.03] to-transparent pointer-events-none animate-card-shimmer" />
+
             <p className="text-sm font-sans font-light tracking-wide text-white/80">
               For queries and confirmations, please contact:
             </p>
@@ -534,7 +613,9 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
                 <p className="text-base font-serif italic text-transparent-yellow font-medium">
                   RTR Ganesh Prabhu
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-[#A5BCD6]/70 mt-1 font-sans">
+                {/* Small decorative line under important text */}
+                <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mx-auto mt-1.5" />
+                <p className="text-[10px] uppercase tracking-wider text-[#A5BCD6]/70 mt-2.5 font-sans">
                   Secretary • +91 97426 31254
                 </p>
               </div>
@@ -542,15 +623,20 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
                 <p className="text-base font-serif italic text-transparent-yellow font-medium">
                   RTR Vigneswaran
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-[#A5BCD6]/70 mt-1 font-sans">
+                {/* Small decorative line under important text */}
+                <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mx-auto mt-1.5" />
+                <p className="text-[10px] uppercase tracking-wider text-[#A5BCD6]/70 mt-2.5 font-sans">
                   Incoming President • +91 80956 71203
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
       </div>
+
+      {/* SECTION 5: Final RSVP Flow */}
+      <RSVPFlow />
 
       {/* Footer watermark */}
       <div className="pt-16 pb-8 text-center">
