@@ -193,7 +193,7 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
     { label: "Date", value: "Sunday, 12th July", icon: "📅" },
     { label: "Time", value: "6:00 PM onwards", icon: "🕕" },
     { label: "Venue", value: "Rotary House of Friendship", icon: "📍" },
-    { label: "Dress Code", value: "Formals", icon: "👔" },
+    { label: "Dress Code", value: "Traditionals", icon: "🥻" },
   ];
 
   return (

@@ -63,7 +63,7 @@ export default function WelcomeReveal({ onComplete }: WelcomeRevealProps) {
               transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
               className="text-4xl sm:text-5xl md:text-6xl font-serif italic text-transparent-yellow drop-shadow-[0_0_20px_rgba(245,239,200,0.22)]"
             >
-              Welcome.
+              Welcome!
             </motion.h2>
           )}
 

@@ -2,18 +2,17 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type RsvpStep = "idle" | "welcome" | "form" | "submitting" | "confirmed";
+type RsvpStep = "idle" | "welcome" | "form" | "submitting" | "confirmed" | "declined";
 
 interface FormData {
   fullName: string;
   clubName: string;
   designation: string;
   email: string;
-  dietary: "vegetarian" | "non-vegetarian" | "vegan" | "no-preference" | "";
 }
 
 interface ConfirmationData {
@@ -65,7 +64,6 @@ export default function RSVPFlow() {
     clubName: "",
     designation: "",
     email: "",
-    dietary: "",
   });
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [confirmation, setConfirmation] = useState<ConfirmationData | null>(null);
@@ -78,6 +76,13 @@ export default function RSVPFlow() {
       setStep("welcome");
       // auto-progress to form after the welcome reveal
       setTimeout(() => setStep("form"), 2800);
+    }, 600);
+  };
+
+  const handleDecline = () => {
+    setOthersFading(true);
+    setTimeout(() => {
+      setStep("declined");
     }, 600);
   };
 
@@ -98,13 +103,14 @@ export default function RSVPFlow() {
 
     const reference = generateReference();
 
+    const supabase = getSupabase();
     const { error } = await supabase.from("rsvps").insert([
       {
         full_name: form.fullName.trim(),
         club_name: form.clubName.trim(),
         designation: form.designation.trim() || null,
         email: form.email.trim() || null,
-        dietary_preference: form.dietary || "no-preference",
+        dietary_preference: "no-preference",
         reference_number: reference,
         status: "confirmed",
       },
@@ -193,23 +199,13 @@ export default function RSVPFlow() {
                 {"I'll be there"}
               </motion.button>
 
-              {/* Maybe */}
-              <motion.button
-                animate={{ opacity: othersFading ? 0 : 1 }}
-                transition={{ duration: 0.4 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-                className="relative w-full sm:w-auto px-8 py-3.5 rounded-full border border-[#A5BCD6]/25 bg-transparent text-[#A5BCD6]/90 font-sans font-light tracking-wider text-xs sm:text-sm uppercase transition-colors duration-300 backdrop-blur-md cursor-pointer hover:bg-white/[0.02] hover:border-[#A5BCD6]/45"
-              >
-                Maybe
-              </motion.button>
-
               {/* Unable to attend */}
               <motion.button
                 animate={{ opacity: othersFading ? 0 : 1 }}
                 transition={{ duration: 0.4 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.97 }}
+                onClick={handleDecline}
                 className="relative w-full sm:w-auto px-8 py-3.5 rounded-full border border-white/10 bg-transparent text-white/40 font-sans font-light tracking-wider text-xs sm:text-sm uppercase transition-colors duration-300 cursor-pointer hover:border-white/20 hover:text-white/60"
               >
                 Unable to attend
@@ -365,35 +361,6 @@ export default function RSVPFlow() {
                 </Field>
               </motion.div>
 
-              {/* Dietary */}
-              <motion.div initial={fadeUpInitial} animate={fadeUpAnimate} transition={fadeUpTransition} className="space-y-3">
-                <p className="text-[10px] uppercase tracking-[0.22em] font-sans font-light text-[#A5BCD6]/70">
-                  Dietary Preference
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    [
-                      { value: "vegetarian", label: "Vegetarian" },
-                      { value: "non-vegetarian", label: "Non Vegetarian" },
-                      { value: "vegan", label: "Vegan" },
-                      { value: "no-preference", label: "No Preference" },
-                    ] as const
-                  ).map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setForm({ ...form, dietary: opt.value })}
-                      className={`px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider font-sans font-light border transition-all duration-200 ${
-                        form.dietary === opt.value
-                          ? "border-[#F5EFC8]/55 bg-[#F5EFC8]/[0.07] text-[#F5EFC8]"
-                          : "border-white/15 text-white/40 hover:border-white/30 hover:text-white/60"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
 
               {/* Submit */}
               <motion.div initial={fadeUpInitial} animate={fadeUpAnimate} transition={fadeUpTransition} className="pt-4 flex justify-center">
@@ -557,6 +524,82 @@ export default function RSVPFlow() {
             >
               Your invitation has been reserved · See you on the 12th
             </motion.p>
+          </motion.div>
+        )}
+
+        {/* ── DECLINED: We'll Miss You Reveal Card ── */}
+        {step === "declined" && (
+          <motion.div
+            key="declined"
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.85, ease: [0.16, 1, 0.3, 1] } }}
+            exit={{ opacity: 0, y: -20, transition: { duration: 0.5 } }}
+            className="relative z-10 w-full max-w-[500px] px-4"
+          >
+            {/* Ambient warm gold glow */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.45, 0.3] }}
+              transition={{ duration: 1.8, ease: "easeOut" }}
+              className="absolute inset-0 bg-[#F5EFC8]/[0.015] blur-[80px] rounded-3xl pointer-events-none"
+            />
+
+            {/* Subtle gold particles inside the card area */}
+            {Array.from({ length: 8 }).map((_, i) => (
+              <motion.div
+                key={`dp-dec-${i}`}
+                className="absolute pointer-events-none rounded-full bg-[#F5EFC8]/20 mix-blend-screen"
+                style={{
+                  left: `${15 + (i * 12) % 70}%`,
+                  top: `${20 + (i * 11) % 60}%`,
+                  width: i % 2 === 0 ? 3 : 1.5,
+                  height: i % 2 === 0 ? 3 : 1.5,
+                }}
+                animate={{
+                  y: [0, i % 2 === 0 ? -20 : 20, 0],
+                  opacity: [0.08, 0.25, 0.08],
+                }}
+                transition={{
+                  duration: 6 + (i * 1.5) % 6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.3,
+                }}
+              />
+            ))}
+
+            {/* Card Content */}
+            <div className="relative rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/50 backdrop-blur-lg p-8 sm:p-10 text-center space-y-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.04)] overflow-hidden">
+              {/* Traveling Shimmer */}
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.02] to-transparent pointer-events-none animate-card-shimmer" />
+
+              <div className="space-y-4">
+                <p className="text-xs uppercase tracking-[0.25em] font-sans font-light text-[#A5BCD6]/60">RSVP Status</p>
+                <h3 className="text-3xl sm:text-4xl font-serif italic text-transparent-yellow font-normal drop-shadow-[0_0_20px_rgba(245,239,200,0.12)]">
+                  {"We'll Miss You"}
+                </h3>
+                <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-[#F5EFC8]/30 to-transparent mx-auto" />
+              </div>
+
+              <p className="text-sm font-sans font-light leading-relaxed text-[#A5BCD6]/85 max-w-[380px] mx-auto">
+                Thank you for letting us know. While we won&apos;t have the pleasure of your presence this time, your support means a great deal to us. We hope to welcome you at one of our future events.
+              </p>
+
+              {/* Back / Change mind button */}
+              <div className="pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setOthersFading(false);
+                    setStep("idle");
+                  }}
+                  className="px-6 py-2.5 rounded-full border border-[#F5EFC8]/20 bg-transparent text-[#F5EFC8]/70 font-sans font-light tracking-wider text-[10px] uppercase hover:bg-white/[0.02] hover:text-[#F5EFC8] transition-all duration-300"
+                >
+                  Change Response
+                </motion.button>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
