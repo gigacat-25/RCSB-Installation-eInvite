@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getSupabase } from "@/lib/supabase";
+import { EVENT, RSVP_CONTACTS } from "@/lib/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type RsvpStep = "idle" | "welcome" | "form" | "submitting" | "confirmed" | "declined";
+type RsvpStep = "idle" | "welcome" | "form" | "submitting" | "confirmed" | "declined" | "error";
 
 interface FormData {
   fullName: string;
@@ -20,13 +20,6 @@ interface ConfirmationData {
   clubName: string;
   designation: string;
   reference: string;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function generateReference(): string {
-  const num = Math.floor(1000 + Math.random() * 9000);
-  return `UGA-${num}`;
 }
 
 // ─── Field Component ─────────────────────────────────────────────────────────
@@ -66,67 +59,86 @@ export default function RSVPFlow() {
     email: "",
   });
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [submitError, setSubmitError] = useState<string>("");
   const [confirmation, setConfirmation] = useState<ConfirmationData | null>(null);
 
-  // ── Step 1: Accept ──────────────────────────────────────────────────────────
+  // ── Step 1: Accept / Decline ────────────────────────────────────────────────
 
   const handleAccept = () => {
     setOthersFading(true);
     setTimeout(() => {
       setStep("welcome");
-      // auto-progress to form after the welcome reveal
       setTimeout(() => setStep("form"), 2800);
     }, 600);
   };
 
   const handleDecline = () => {
     setOthersFading(true);
-    setTimeout(() => {
-      setStep("declined");
-    }, 600);
+    setTimeout(() => setStep("declined"), 600);
   };
 
-  // ── Step 2: Validate & Submit ───────────────────────────────────────────────
+  // ── Step 2: Validate ─────────────────────────────────────────────────────────
 
   const validate = (): boolean => {
     const e: Partial<FormData> = {};
     if (!form.fullName.trim()) e.fullName = "required";
     if (!form.clubName.trim()) e.clubName = "required";
+    if (form.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email.trim())) e.email = "invalid";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
+  // ── Step 3: Submit via API Route ─────────────────────────────────────────────
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
     setStep("submitting");
+    setSubmitError("");
 
-    const reference = generateReference();
+    try {
+      const response = await fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: form.fullName.trim(),
+          clubName: form.clubName.trim(),
+          designation: form.designation.trim() || undefined,
+          email: form.email.trim() || undefined,
+        }),
+      });
 
-    const supabase = getSupabase();
-    const { error } = await supabase.from("rsvps").insert([
-      {
-        full_name: form.fullName.trim(),
-        club_name: form.clubName.trim(),
-        designation: form.designation.trim() || null,
-        email: form.email.trim() || null,
-        dietary_preference: "no-preference",
-        reference_number: reference,
-        status: "confirmed",
-      },
-    ]);
+      const data = await response.json();
 
-    if (error) {
-      console.error("Supabase insert error:", error.message);
+      if (!response.ok || !data.success) {
+        const msg = data?.error ?? "Something went wrong. Please try again.";
+        setSubmitError(msg);
+        setStep("error");
+        return;
+      }
+
+      setConfirmation({
+        fullName: form.fullName.trim(),
+        clubName: form.clubName.trim(),
+        designation: form.designation.trim(),
+        reference: data.reference,
+      });
+      setStep("confirmed");
+    } catch {
+      setSubmitError("A network error occurred. Please check your connection and try again.");
+      setStep("error");
     }
+  };
 
-    setConfirmation({
-      fullName: form.fullName.trim(),
-      clubName: form.clubName.trim(),
-      designation: form.designation.trim(),
-      reference,
-    });
-    setStep("confirmed");
+  // ── Retry ────────────────────────────────────────────────────────────────────
+
+  const handleRetry = () => {
+    setSubmitError("");
+    setStep("form");
   };
 
   // ── Framer Motion variants ───────────────────────────────────────────────────
@@ -167,8 +179,9 @@ export default function RSVPFlow() {
         />
       ))}
 
-      {/* ── IDLE: Heading + 3 buttons ── */}
       <AnimatePresence mode="wait">
+
+        {/* ── IDLE: Heading + Buttons ── */}
         {step === "idle" && (
           <motion.div
             key="idle"
@@ -187,7 +200,6 @@ export default function RSVPFlow() {
               </p>
             </div>
 
-            {/* Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-[560px]">
               {/* I'll be there */}
               <motion.button
@@ -353,14 +365,16 @@ export default function RSVPFlow() {
                 <Field label="Email Address">
                   <input
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder="your@email.com (optional — for confirmation)"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className={inputClass}
                   />
+                  {errors.email && (
+                    <p className="text-[10px] text-[#4D0E12]/80 mt-1 font-sans tracking-wide">Please enter a valid email address</p>
+                  )}
                 </Field>
               </motion.div>
-
 
               {/* Submit */}
               <motion.div initial={fadeUpInitial} animate={fadeUpAnimate} transition={fadeUpTransition} className="pt-4 flex justify-center">
@@ -392,6 +406,55 @@ export default function RSVPFlow() {
               className="w-7 h-7 rounded-full border border-[#F5EFC8]/30 border-t-[#F5EFC8]/80"
             />
             <p className="text-xs font-sans tracking-widest uppercase text-[#A5BCD6]/55">Reserving your seat…</p>
+          </motion.div>
+        )}
+
+        {/* ── ERROR: Friendly retry state ── */}
+        {step === "error" && (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 w-full max-w-[480px] px-4"
+          >
+            <div className="rounded-2xl border border-[#4D0E12]/60 bg-[#4D0E12]/10 backdrop-blur-md p-8 text-center space-y-5">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.25em] font-sans font-light text-[#A5BCD6]/60">
+                  Something went wrong
+                </p>
+                <h3 className="text-xl font-serif italic text-transparent-yellow">
+                  Unable to Confirm RSVP
+                </h3>
+                <div className="w-10 h-[1px] bg-gradient-to-r from-transparent via-[#F5EFC8]/20 to-transparent mx-auto" />
+              </div>
+              {submitError && (
+                <p className="text-sm font-sans font-light text-[#A5BCD6]/80 leading-relaxed">
+                  {submitError}
+                </p>
+              )}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleRetry}
+                  className="px-7 py-3 rounded-full border border-[#F5EFC8]/35 bg-[#F5EFC8]/[0.04] text-[#F5EFC8] font-sans font-light tracking-wider text-xs uppercase transition-all duration-300 cursor-pointer hover:bg-[#F5EFC8]/[0.09]"
+                >
+                  Try Again
+                </motion.button>
+                <p className="text-[10px] font-sans text-[#A5BCD6]/45 font-light">
+                  or contact us directly
+                </p>
+              </div>
+              {/* Fallback contacts */}
+              <div className="pt-2 space-y-1">
+                {RSVP_CONTACTS.map((c) => (
+                  <p key={c.name} className="text-[10px] uppercase tracking-wider text-[#A5BCD6]/50 font-sans">
+                    {c.role} {c.name} · {c.phone}
+                  </p>
+                ))}
+              </div>
+            </div>
           </motion.div>
         )}
 
@@ -463,9 +526,9 @@ export default function RSVPFlow() {
                 className="px-7 py-5 grid grid-cols-2 gap-x-6 gap-y-4"
               >
                 {[
-                  { label: "Event", value: "UGAMA AARAMBHA" },
-                  { label: "Date", value: "Sunday, 12th July" },
-                  { label: "Venue", value: "Rotary House of Friendship" },
+                  { label: "Event", value: EVENT.title },
+                  { label: "Date",  value: EVENT.date },
+                  { label: "Venue", value: EVENT.venue },
                   { label: "Status", value: "CONFIRMED ✓" },
                 ].map((item) => (
                   <motion.div
@@ -527,7 +590,7 @@ export default function RSVPFlow() {
           </motion.div>
         )}
 
-        {/* ── DECLINED: We'll Miss You Reveal Card ── */}
+        {/* ── DECLINED: We'll Miss You card ── */}
         {step === "declined" && (
           <motion.div
             key="declined"
@@ -536,7 +599,7 @@ export default function RSVPFlow() {
             exit={{ opacity: 0, y: -20, transition: { duration: 0.5 } }}
             className="relative z-10 w-full max-w-[500px] px-4"
           >
-            {/* Ambient warm gold glow */}
+            {/* Ambient glow */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 0.45, 0.3] }}
@@ -544,7 +607,7 @@ export default function RSVPFlow() {
               className="absolute inset-0 bg-[#F5EFC8]/[0.015] blur-[80px] rounded-3xl pointer-events-none"
             />
 
-            {/* Subtle gold particles inside the card area */}
+            {/* Floating particles */}
             {Array.from({ length: 8 }).map((_, i) => (
               <motion.div
                 key={`dp-dec-${i}`}
@@ -559,18 +622,12 @@ export default function RSVPFlow() {
                   y: [0, i % 2 === 0 ? -20 : 20, 0],
                   opacity: [0.08, 0.25, 0.08],
                 }}
-                transition={{
-                  duration: 6 + (i * 1.5) % 6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.3,
-                }}
+                transition={{ duration: 6 + (i * 1.5) % 6, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
               />
             ))}
 
-            {/* Card Content */}
             <div className="relative rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/50 backdrop-blur-lg p-8 sm:p-10 text-center space-y-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.04)] overflow-hidden">
-              {/* Traveling Shimmer */}
+              {/* Shimmer */}
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#F5EFC8]/[0.02] to-transparent pointer-events-none animate-card-shimmer" />
 
               <div className="space-y-4">
@@ -585,15 +642,11 @@ export default function RSVPFlow() {
                 Thank you for letting us know. While we won&apos;t have the pleasure of your presence this time, your support means a great deal to us. We hope to welcome you at one of our future events.
               </p>
 
-              {/* Back / Change mind button */}
               <div className="pt-4">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setOthersFading(false);
-                    setStep("idle");
-                  }}
+                  onClick={() => { setOthersFading(false); setStep("idle"); }}
                   className="px-6 py-2.5 rounded-full border border-[#F5EFC8]/20 bg-transparent text-[#F5EFC8]/70 font-sans font-light tracking-wider text-[10px] uppercase hover:bg-white/[0.02] hover:text-[#F5EFC8] transition-all duration-300"
                 >
                   Change Response
@@ -602,6 +655,7 @@ export default function RSVPFlow() {
             </div>
           </motion.div>
         )}
+
       </AnimatePresence>
     </div>
   );
