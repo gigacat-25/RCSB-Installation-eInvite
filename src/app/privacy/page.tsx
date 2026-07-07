@@ -129,8 +129,8 @@ export default function PrivacyPolicy() {
             </p>
             <div className="p-5 rounded-xl bg-black/30 border border-[#F5EFC8]/10 font-mono text-xs text-[#F5EFC8] space-y-1">
               <p className="font-sans uppercase text-[9px] tracking-widest text-[#A5BCD6]/60 mb-2">Designated Grievance Contact</p>
-              <p>Officer: Rtr. Ganesh Prabhu (Incoming Secretary)</p>
-              <p>Email: rcsb.swarnabengaluru@gmail.com</p>
+              <p>Officer: Rtr. Ganesh Prabhu (Secretary 2026-27)</p>
+              <p>Email: rota.rcsb@gmail.com</p>
               <p>Hosts: Rotaract Club of Swarna Bengaluru & Rotaract Club of Bengaluru Nava Chaitanya</p>
             </div>
           </section>

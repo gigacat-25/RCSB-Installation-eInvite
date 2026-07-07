@@ -483,6 +483,8 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
             <span className="w-10 h-[1px] bg-[#F5EFC8]/10" />
           </h2>
 
+          <RSVPFlow />
+
           <motion.div
             variants={cardHoverVariants}
             whileHover="hover"
@@ -508,9 +510,6 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
         </div>
 
       </div>
-
-      {/* ── SECTION 5: RSVP Flow ── */}
-       <RSVPFlow />
 
       {/* Footer watermark */}
       <div className="pt-16 pb-8 text-center space-y-3">

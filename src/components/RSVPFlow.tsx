@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import QRCode from "qrcode";
 import { EVENT, RSVP_CONTACTS } from "@/lib/constants";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,7 +184,7 @@ export default function RSVPFlow() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative w-full flex flex-col items-center justify-center min-h-[70vh] py-24 mt-16 md:mt-24 overflow-hidden">
+    <div className="relative w-full flex flex-col items-center justify-center py-6 sm:py-8 overflow-hidden">
 
       {/* Ambient central glow */}
       <motion.div
@@ -235,14 +236,11 @@ export default function RSVPFlow() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-[560px]">
               {/* I'll be there */}
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 0 24px rgba(245,239,200,0.14)" }}
-                whileTap={{ scale: 0.97 }}
+              <LiquidMetalButton
+                label="I'll be there"
                 onClick={handleAccept}
-                className="relative w-full sm:w-auto px-8 py-3.5 rounded-full border border-[#F5EFC8]/35 bg-[#F5EFC8]/[0.04] text-[#F5EFC8] font-sans font-light tracking-wider text-xs sm:text-sm uppercase transition-colors duration-300 backdrop-blur-md cursor-pointer hover:bg-[#F5EFC8]/[0.09] hover:border-[#F5EFC8]/65"
-              >
-                {"I'll be there"}
-              </motion.button>
+                width={160}
+              />
 
               {/* Unable to attend */}
               <motion.button
@@ -456,9 +454,9 @@ export default function RSVPFlow() {
               <motion.div initial={fadeUpInitial} animate={fadeUpAnimate} transition={fadeUpTransition} className="pt-4 flex justify-center">
                 <motion.button
                   type="submit"
-                  whileHover={{ scale: 1.04, boxShadow: "0 0 24px rgba(245,239,200,0.12)" }}
+                  whileHover={{ scale: 1.04, boxShadow: "0 0 30px rgba(245,239,200,0.25)" }}
                   whileTap={{ scale: 0.97 }}
-                  className="px-10 py-3.5 rounded-full border border-[#F5EFC8]/40 bg-[#F5EFC8]/[0.04] text-[#F5EFC8] font-sans font-light tracking-[0.18em] text-xs uppercase transition-all duration-300 backdrop-blur-md cursor-pointer hover:bg-[#F5EFC8]/[0.10] hover:border-[#F5EFC8]/70"
+                  className="px-10 py-3.5 rounded-full border border-[#F5EFC8]/50 bg-[#F5EFC8]/[0.12] text-[#F5EFC8] font-sans font-medium tracking-[0.18em] text-xs uppercase transition-all duration-300 backdrop-blur-md cursor-pointer hover:bg-[#F5EFC8]/[0.22] hover:border-[#F5EFC8]/90 shadow-[0_0_15px_rgba(245,239,200,0.12)]"
                 >
                   Confirm Attendance
                 </motion.button>

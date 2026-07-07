@@ -77,38 +77,38 @@ export const LEADERSHIP = {
   swarnaBengaluru: {
     clubName: "Rotaract Club of Swarna Bengaluru",
     outgoingPresident: {
-      role: "Outgoing President",
+      role: "President 2025-26",
       name: "Rtr. Dr.Harish",
     },
     incomingPresident: {
-      role: "Incoming President",
-      name: "Rtr. Vigneswaran",
+      role: "President 2026-27",
+      name: "Rtr. Vigneshwaran",
     },
     outgoingSecretary: {
-      role: "Outgoing Secretary",
-      name: "Rtr. Rashmitha & Vigneswaran",
+      role: "Secretary 2025-26",
+      name: "Rtr. Rashmitha & Rtr. Vigneshwaran",
     },
     incomingSecretary: {
-      role: "Incoming Secretary",
+      role: "Secretary 2026-27",
       name: "Rtr. Ganesh & Rtr. Prerana",
     },
   },
   navaChaitanya: {
     clubName: "Rotaract Club of Bengaluru Nava Chaitanya",
     outgoingPresident: {
-      role: "Outgoing President",
-      name: "Rtr. Srrivatsa",
+      role: "President 2025-26",
+      name: "Rtr. Srivatsa",
     },
     incomingPresident: {
-      role: "Incoming President",
-      name: "Rtr. Srrivatsa",
+      role: "President 2026-27",
+      name: "Rtr. Srivatsa",
     },
     outgoingSecretary: {
-      role: "Outgoing Secretary",
+      role: "Secretary 2025-26",
       name: "Rtr. Disha & Rtr. Danish",
     },
     incomingSecretary: {
-      role: "Incoming Secretary",
+      role: "Secretary 2026-27",
       name: "Rtr. Nayana",
     },
   },
@@ -119,12 +119,12 @@ export const LEADERSHIP = {
 export const RSVP_CONTACTS = [
   {
     name: "Rtr. Ganesh & Rtr. Prerana",
-    role: "Incoming Secretary",
+    role: "Secretary 2026-27",
     phone: "+91 97426 31254",
   },
   {
-    name: "Rtr. Vigneswaran",
-    role: "Incoming President",
+    name: "Rtr. Vigneshwaran",
+    role: "President 2026-27",
     phone: "+91 80956 71203",
   },
 ] as const;
@@ -161,7 +161,7 @@ export const META = {
 export const EMAIL_CONFIG = {
   senderName: "UGAMA AARAMBHA 2K26",
   senderAddress: process.env.NODEMAILER_FROM ?? "noreply@example.com",
-  replyTo: "rcsb.swarnabengaluru@gmail.com",
+  replyTo: "rota.rcsb@gmail.com",
 } as const;
 
 // ─── Event Flow Schedule ──────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ export const EVENT_FLOW = [
   { time: "05:30 PM", activity: "Registrations & High Tea" },
   { time: "06:00 PM", activity: "Collar to Order & Dignitary Welcome" },
   { time: "06:15 PM", activity: "Secretarial Report & Outgoing Showcase" },
-  { time: "06:35 PM", activity: "Installation of Incoming Presidents" },
+  { time: "06:35 PM", activity: "Installation of Presidents 2026-27" },
   { time: "07:00 PM", activity: "Induction of New Members" },
   { time: "07:20 PM", activity: "Keynote Address by DRR Sanjay R." },
   { time: "07:45 PM", activity: "Address by Chief Guest & Guests of Honor" },

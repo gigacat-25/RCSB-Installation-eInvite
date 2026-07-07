@@ -115,7 +115,7 @@ export default function TermsAndConditions() {
               If you have any queries regarding these terms or your registration status, please contact the host organizing committee:
             </p>
             <p className="font-mono text-xs text-[#F5EFC8] mt-1">
-              Email: rcsb.swarnabengaluru@gmail.com
+              Email: rota.rcsb@gmail.com
             </p>
           </section>
         </div>
