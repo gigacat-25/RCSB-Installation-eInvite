@@ -21,7 +21,18 @@ export default function Home() {
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [phase, setPhase] = useState<Phase>("cover");
   const [isBtnHovered, setIsBtnHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic mobile screen check
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Motion values for tracking cursor positions (active during cover phase)
   const mouseX = useMotionValue(0);
@@ -42,9 +53,9 @@ export default function Home() {
   const buttonParallaxX = useTransform(smoothMouseX, [-0.5, 0.5], [-1.8, 1.8]);
   const buttonParallaxY = useTransform(smoothMouseY, [-0.5, 0.5], [-1.8, 1.8]);
 
-  // Track window mouse movements and normalize coordinates
+  // Track window mouse movements and normalize coordinates (Desktop only)
   useEffect(() => {
-    if (phase !== "cover") return; // Stop tracking mouse parallax after cover phase to focus scroll actions
+    if (phase !== "cover" || isMobile) return;
     const handleMouseMove = (e: MouseEvent) => {
       const normalizedX = (e.clientX / window.innerWidth) - 0.5;
       const normalizedY = (e.clientY / window.innerHeight) - 0.5;
@@ -54,7 +65,7 @@ export default function Home() {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [mouseX, mouseY, phase]);
+  }, [mouseX, mouseY, phase, isMobile]);
 
   const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -151,7 +162,7 @@ export default function Home() {
       <motion.main
         key={phase === "homepage" ? "homepage" : "cover-transition"}
         ref={containerRef}
-        className={`relative w-screen select-none premium-radial-bg overflow-x-hidden ${
+        className={`relative w-full select-none premium-radial-bg overflow-x-hidden ${
           phase === "homepage" 
             ? "h-screen overflow-y-auto flex flex-col items-center justify-start scroll-smooth" 
             : "h-screen overflow-hidden flex flex-col items-center justify-center"
@@ -160,42 +171,24 @@ export default function Home() {
         initial="initial"
         animate="animate"
       >
-        {/* Parallax Background Layer (Glows & Archway - fixed behind scrolling elements) */}
+        {/* Parallax Background Layer */}
         <motion.div 
           className="fixed inset-0 pointer-events-none z-0"
           style={{ 
-            x: phase === "cover" ? bgParallaxX : 0, 
-            y: phase === "cover" ? bgParallaxY : 0 
+            x: (phase === "cover" && !isMobile) ? bgParallaxX : 0, 
+            y: (phase === "cover" && !isMobile) ? bgParallaxY : 0 
           }}
         >
-          <BackgroundGlow isButtonHovered={isBtnHovered} />
-          {phase === "cover" && (
-            <>
-              <ShootingStars
-                starColor="#9E00FF"
-                trailColor="#2EB9DF"
-                minSpeed={15}
-                maxSpeed={35}
-                minDelay={1000}
-                maxDelay={3000}
-              />
-              <ShootingStars
-                starColor="#FF0099"
-                trailColor="#FFB800"
-                minSpeed={10}
-                maxSpeed={25}
-                minDelay={2000}
-                maxDelay={4000}
-              />
-              <ShootingStars
-                starColor="#00FF9E"
-                trailColor="#00B8FF"
-                minSpeed={20}
-                maxSpeed={40}
-                minDelay={1500}
-                maxDelay={3500}
-              />
-            </>
+          <BackgroundGlow isButtonHovered={isBtnHovered} isMobile={isMobile} />
+          {phase === "cover" && !isMobile && (
+            <ShootingStars
+              starColor="#9E00FF"
+              trailColor="#2EB9DF"
+              minSpeed={15}
+              maxSpeed={35}
+              minDelay={1500}
+              maxDelay={3500}
+            />
           )}
         </motion.div>
 

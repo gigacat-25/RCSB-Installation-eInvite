@@ -27,6 +27,7 @@ interface DecorativeProps {
   floatYRange: number[];
   floatDuration: number;
   floatDelay?: number;
+  isMobile?: boolean;
 }
 
 // Reusable animated rigging for subtle floating decorative flourishes
@@ -40,6 +41,18 @@ function DecorativeElement({
   floatDuration,
   floatDelay = 0,
 }: DecorativeProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Completely skip rendering these heavy elements on mobile to save frames
+  if (isMobile) return null;
+
   const colorClass =
     color === "yellow" ? "text-transparent-yellow" :
     color === "blue" ? "text-cerulean-blue" : "text-[#4D0E12]";
@@ -121,6 +134,7 @@ function DecorativeElement({
 export default function InvitationHomepage({ scrollContainerRef }: InvitationHomepageProps) {
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({});
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
 
   const setSectionActive = (sectionId: string) => {
     setActiveSections((prev) => {
@@ -129,8 +143,19 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
     });
   };
 
-  // Handle cursor moves for micro parallax response
+  // Check screen size
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Handle cursor moves for micro parallax response (Desktop only)
+  useEffect(() => {
+    if (isMobile) return;
     const handleMouseMove = (e: MouseEvent) => {
       const x = (e.clientX / window.innerWidth - 0.5) * 8;
       const y = (e.clientY / window.innerHeight - 0.5) * 8;
@@ -138,7 +163,7 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  }, [isMobile]);
 
   const { scrollYProgress } = useScroll({ container: scrollContainerRef });
   const scaleY = useSpring(scrollYProgress, { stiffness: 90, damping: 25, restDelta: 0.001 });
@@ -154,7 +179,7 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
   };
 
   const cardHoverVariants: Variants = {
-    hover: {
+    hover: isMobile ? {} : {
       y: -8,
       scale: 1.02,
       borderColor: "rgba(245, 239, 200, 0.35)",
@@ -318,35 +343,83 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
             <span className="w-10 h-[1px] bg-[#F5EFC8]/10" />
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Incoming */}
-            <motion.div variants={cardHoverVariants} whileHover="hover" transition={{ type: "spring", stiffness: 300, damping: 22 }} className={cardClass}>
-              {shimmer}
-              <h3 className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/60">{LEADERSHIP.incomingPresident.role}</h3>
-              <p className="text-xl font-serif italic text-transparent-yellow font-semibold">{LEADERSHIP.incomingPresident.name}</p>
-              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mt-2" />
-            </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Club 1: Swarna Bengaluru */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-sans uppercase tracking-[0.2em] text-[#F5EFC8]/90 font-light border-b border-[#F5EFC8]/10 pb-2">
+                {LEADERSHIP.swarnaBengaluru.clubName}
+              </h3>
+              <div className="space-y-4">
+                {/* Presidents */}
+                <motion.div variants={cardHoverVariants} whileHover="hover" transition={{ type: "spring", stiffness: 300, damping: 22 }} className={cardClass}>
+                  {shimmer}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-[#A5BCD6]/60">{LEADERSHIP.swarnaBengaluru.outgoingPresident.role}</h4>
+                      <p className="text-base font-serif italic text-white/80">{LEADERSHIP.swarnaBengaluru.outgoingPresident.name}</p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-transparent-yellow">{LEADERSHIP.swarnaBengaluru.incomingPresident.role}</h4>
+                      <p className="text-base font-serif italic text-transparent-yellow font-semibold">{LEADERSHIP.swarnaBengaluru.incomingPresident.name}</p>
+                    </div>
+                  </div>
+                </motion.div>
 
-            {/* Outgoing */}
-            <motion.div variants={cardHoverVariants} whileHover="hover" transition={{ type: "spring", stiffness: 300, damping: 22 }} className={cardClass}>
-              {shimmer}
-              <h3 className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/60">{LEADERSHIP.outgoingPresident.role}</h3>
-              <p className="text-xl font-serif italic text-white/80">{LEADERSHIP.outgoingPresident.name}</p>
-              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mt-2" />
-            </motion.div>
-          </div>
-
-          {/* Board of Directors */}
-          <motion.div variants={cardHoverVariants} whileHover="hover" transition={{ type: "spring", stiffness: 300, damping: 22 }} className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 sm:p-8 space-y-4 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]">
-            {shimmer}
-            <h3 className="text-xs font-sans uppercase tracking-widest text-center text-[#A5BCD6]/60">Board of Directors</h3>
-            <div className="w-12 h-[1px] bg-[#F5EFC8]/20 mx-auto" />
-            <div className="text-center">
-              <p className="text-lg font-serif italic text-cerulean-blue font-medium">{LEADERSHIP.secretary.name}</p>
-              <p className="text-xs font-sans uppercase tracking-widest text-[#A5BCD6]/70 mt-1">{LEADERSHIP.secretary.role}</p>
-              <div className="w-12 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mx-auto mt-2" />
+                {/* Secretaries */}
+                <motion.div variants={cardHoverVariants} whileHover="hover" transition={{ type: "spring", stiffness: 300, damping: 22 }} className={cardClass}>
+                  {shimmer}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-[#A5BCD6]/60">{LEADERSHIP.swarnaBengaluru.outgoingSecretary.role}</h4>
+                      <p className="text-base font-serif italic text-white/80">{LEADERSHIP.swarnaBengaluru.outgoingSecretary.name}</p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-transparent-yellow">{LEADERSHIP.swarnaBengaluru.incomingSecretary.role}</h4>
+                      <p className="text-base font-serif italic text-transparent-yellow font-semibold">{LEADERSHIP.swarnaBengaluru.incomingSecretary.name}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
             </div>
-          </motion.div>
+
+            {/* Club 2: Nava Chaitanya */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-sans uppercase tracking-[0.2em] text-[#F5EFC8]/90 font-light border-b border-[#F5EFC8]/10 pb-2">
+                {LEADERSHIP.navaChaitanya.clubName}
+              </h3>
+              <div className="space-y-4">
+                {/* Presidents */}
+                <motion.div variants={cardHoverVariants} whileHover="hover" transition={{ type: "spring", stiffness: 300, damping: 22 }} className={cardClass}>
+                  {shimmer}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-[#A5BCD6]/60">{LEADERSHIP.navaChaitanya.outgoingPresident.role}</h4>
+                      <p className="text-base font-serif italic text-white/80">{LEADERSHIP.navaChaitanya.outgoingPresident.name}</p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-transparent-yellow">{LEADERSHIP.navaChaitanya.incomingPresident.role}</h4>
+                      <p className="text-base font-serif italic text-transparent-yellow font-semibold">{LEADERSHIP.navaChaitanya.incomingPresident.name}</p>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Secretaries */}
+                <motion.div variants={cardHoverVariants} whileHover="hover" transition={{ type: "spring", stiffness: 300, damping: 22 }} className={cardClass}>
+                  {shimmer}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-[#A5BCD6]/60">{LEADERSHIP.navaChaitanya.outgoingSecretary.role}</h4>
+                      <p className="text-base font-serif italic text-white/80">{LEADERSHIP.navaChaitanya.outgoingSecretary.name}</p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <h4 className="text-[10px] font-sans uppercase tracking-widest text-transparent-yellow">{LEADERSHIP.navaChaitanya.incomingSecretary.role}</h4>
+                      <p className="text-base font-serif italic text-transparent-yellow font-semibold">{LEADERSHIP.navaChaitanya.incomingSecretary.name}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── SECTION 4: Contact / RSVP Info ── */}

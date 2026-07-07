@@ -213,43 +213,54 @@ function ScannerModal({ onClose, onCheckIn, onRefreshData }: ScannerModalProps) 
   }, [loading, result, onCheckIn, onRefreshData]);
 
   useEffect(() => {
-    const scannerId = "qr-viewfinder";
-    const qrcode = new Html5Qrcode(scannerId);
-    qrRef.current = qrcode;
+    let active = true;
+    let qrcode: Html5Qrcode | null = null;
 
     const timer = setTimeout(() => {
+      if (!active) return;
+
       const el = document.getElementById("qr-viewfinder");
       if (!el) {
-        setCameraError("Scanner element not found in DOM.");
+        setCameraError("Camera viewfinder element not found in DOM.");
         setScanning(false);
         return;
       }
 
-      qrcode
-        .start(
-          { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: (width, height) => {
-              const size = Math.min(width, height) * 0.65;
-              return { width: size, height: size };
+      try {
+        qrcode = new Html5Qrcode("qr-viewfinder");
+        qrRef.current = qrcode;
+
+        qrcode
+          .start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: (width, height) => {
+                const size = Math.min(width, height) * 0.65;
+                return { width: size, height: size };
+              },
             },
-          },
-          (text) => {
-            handleScan(text);
-          },
-          () => {}
-        )
-        .catch((err) => {
-          console.error("Camera startup error:", err);
-          setCameraError("Unable to access camera. Please check camera permissions.");
-          setScanning(false);
-        });
-    }, 180);
+            (text) => {
+              handleScan(text);
+            },
+            () => {}
+          )
+          .catch((err) => {
+            console.error("Camera startup error:", err);
+            setCameraError("Unable to access camera. Please check camera permissions.");
+            setScanning(false);
+          });
+      } catch (err) {
+        console.error("Html5Qrcode constructor error:", err);
+        setCameraError("Scanner initialization failed.");
+        setScanning(false);
+      }
+    }, 200);
 
     return () => {
+      active = false;
       clearTimeout(timer);
-      if (qrcode.isScanning) {
+      if (qrcode && qrcode.isScanning) {
         qrcode.stop().catch((e) => console.warn("Clean up camera stop error:", e));
       }
     };
