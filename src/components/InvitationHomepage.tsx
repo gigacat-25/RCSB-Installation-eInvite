@@ -470,6 +470,56 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
           </div>
         </div>
 
+        {/* ── SECTION 3.5: Service Quest Game ── */}
+        <div className="relative space-y-8">
+          <DecorativeElement type="sparkle" color="yellow" className="w-3.5 h-3.5 right-[20%] top-[-20px]" mouseOffset={mouseOffset} parallaxFactor={1.1} floatYRange={[0, 8, 0]} floatDuration={14} />
+          <DecorativeElement type="circle" color="blue" className="w-4 h-4 left-[15%] top-[-15px]" mouseOffset={mouseOffset} parallaxFactor={0.9} floatYRange={[0, -10, 0]} floatDuration={16} floatDelay={1} />
+
+          <motion.div variants={markerVariants} animate={activeSections["quest"] ? "active" : "inactive"} className="absolute -translate-x-1/2 -left-8 sm:-left-10 top-[10px] w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 z-20 pointer-events-none" />
+          <motion.div onViewportEnter={() => setSectionActive("quest")} viewport={{ once: true, amount: 0.15 }} className="absolute top-0" />
+
+          <h2 className="text-xl sm:text-2xl font-light font-sans tracking-widest text-[#A5BCD6]/90 border-b border-[#F5EFC8]/10 pb-3 uppercase flex items-center justify-between">
+            <span>Service Quest</span>
+            <span className="w-10 h-[1px] bg-[#F5EFC8]/10" />
+          </h2>
+
+          <motion.div
+            variants={cardHoverVariants}
+            whileHover="hover"
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            className="relative overflow-hidden rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md p-6 sm:p-8 text-center space-y-5 cursor-default shadow-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.04),inset_0_0_12px_rgba(245,239,200,0.02)]"
+          >
+            {shimmer}
+            <div className="w-12 h-12 mx-auto rounded-full border border-[#F5EFC8]/25 bg-[#F5EFC8]/5 flex items-center justify-center shadow-[inset_0_0_10px_rgba(245,239,200,0.1)]">
+              <span className="text-2xl filter drop-shadow-[0_0_4px_rgba(245,239,200,0.25)] select-none">✨</span>
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-serif italic text-transparent-yellow font-medium">Match the Spirit of Service</h3>
+              <p className="text-xs uppercase tracking-widest text-[#A5BCD6]/60 font-sans">Interactive Memory Challenge</p>
+            </div>
+            <p className="text-sm font-sans font-light text-white/95 max-w-[550px] mx-auto leading-relaxed text-center">
+              Test your focus and celebrate the core values of Rotaract in this premium memory challenge. Flip cards to match matching symbols, beat the clock, and earn your place on the live leaderboard!
+            </p>
+            <div className="w-16 h-[1px] bg-gradient-to-r from-[#F5EFC8]/35 via-[#F5EFC8]/10 to-transparent mx-auto mt-2" />
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/service-quest"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-[#F5EFC8]/35 bg-[#F5EFC8] hover:bg-[#faf6db] text-[#231815] font-sans text-xs uppercase tracking-[0.2em] font-semibold cursor-pointer shadow-md transition-colors duration-300 flex items-center justify-center gap-2"
+              >
+                <span>Enter Quest</span>
+                <span className="text-xs">↗</span>
+              </Link>
+              <Link
+                href="/service-quest/leaderboard"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-[#F5EFC8]/15 bg-[#231815]/60 hover:bg-[#231815]/95 hover:border-[#F5EFC8]/35 text-[#A5BCD6] hover:text-[#F5EFC8] font-sans text-xs uppercase tracking-[0.2em] font-semibold cursor-pointer shadow-md transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                <span>View Leaderboard</span>
+                <span>🏆</span>
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+
         {/* ── SECTION 4: Contact / RSVP Info ── */}
         <div className="relative space-y-8 pb-12">
           <DecorativeElement type="circle" color="yellow" className="w-4 h-4 right-[10%] top-[-20px]" mouseOffset={mouseOffset} parallaxFactor={0.75} floatYRange={[0, 15, 0]} floatDuration={14} floatDelay={1} />
