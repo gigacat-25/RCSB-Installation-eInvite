@@ -56,7 +56,7 @@ function DecorativeElement({
 
   const colorClass =
     color === "yellow" ? "text-transparent-yellow" :
-    color === "blue" ? "text-cerulean-blue" : "text-[#4D0E12]";
+      color === "blue" ? "text-cerulean-blue" : "text-[#4D0E12]";
 
   const renderSVG = () => {
     switch (type) {
@@ -470,7 +470,20 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
           </div>
         </div>
 
-        {/* ── SECTION 3.5: Service Quest Game ── */}
+        {/* ── SECTION 4: RSVP ── */}
+        <div className="relative space-y-8">
+          <motion.div variants={markerVariants} animate={activeSections["rsvp"] ? "active" : "inactive"} className="absolute -translate-x-1/2 -left-8 sm:-left-10 top-[10px] w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 z-20 pointer-events-none" />
+          <motion.div onViewportEnter={() => setSectionActive("rsvp")} viewport={{ once: true, amount: 0.15 }} className="absolute top-0" />
+
+          <h2 className="text-xl sm:text-2xl font-light font-sans tracking-widest text-[#A5BCD6]/90 border-b border-[#F5EFC8]/10 pb-3 uppercase flex items-center justify-between">
+            <span>RSVP</span>
+            <span className="w-10 h-[1px] bg-[#F5EFC8]/10" />
+          </h2>
+
+          <RSVPFlow />
+        </div>
+
+        {/* ── SECTION 4.5: Service Quest Game ── */}
         <div className="relative space-y-8">
           <DecorativeElement type="sparkle" color="yellow" className="w-3.5 h-3.5 right-[20%] top-[-20px]" mouseOffset={mouseOffset} parallaxFactor={1.1} floatYRange={[0, 8, 0]} floatDuration={14} />
           <DecorativeElement type="circle" color="blue" className="w-4 h-4 left-[15%] top-[-15px]" mouseOffset={mouseOffset} parallaxFactor={0.9} floatYRange={[0, -10, 0]} floatDuration={16} floatDelay={1} />
@@ -520,20 +533,18 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
           </motion.div>
         </div>
 
-        {/* ── SECTION 4: Contact / RSVP Info ── */}
+        {/* ── SECTION 5: Queries & Contact ── */}
         <div className="relative space-y-8 pb-12">
           <DecorativeElement type="circle" color="yellow" className="w-4 h-4 right-[10%] top-[-20px]" mouseOffset={mouseOffset} parallaxFactor={0.75} floatYRange={[0, 15, 0]} floatDuration={14} floatDelay={1} />
           <DecorativeElement type="confetti" color="blue" className="w-3.5 h-3.5 left-[30%] top-[-25px]" mouseOffset={mouseOffset} parallaxFactor={1.3} floatYRange={[0, -13, 0]} floatDuration={11} floatDelay={0.7} />
 
-          <motion.div variants={markerVariants} animate={activeSections["rsvp"] ? "active" : "inactive"} className="absolute -translate-x-1/2 -left-8 sm:-left-10 top-[10px] w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 z-20 pointer-events-none" />
-          <motion.div onViewportEnter={() => setSectionActive("rsvp")} viewport={{ once: true, amount: 0.15 }} className="absolute top-0" />
+          <motion.div variants={markerVariants} animate={activeSections["contact"] ? "active" : "inactive"} className="absolute -translate-x-1/2 -left-8 sm:-left-10 top-[10px] w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 z-20 pointer-events-none" />
+          <motion.div onViewportEnter={() => setSectionActive("contact")} viewport={{ once: true, amount: 0.15 }} className="absolute top-0" />
 
           <h2 className="text-xl sm:text-2xl font-light font-sans tracking-widest text-[#A5BCD6]/90 border-b border-[#F5EFC8]/10 pb-3 uppercase flex items-center justify-between">
-            <span>RSVP</span>
+            <span>Queries & Contact</span>
             <span className="w-10 h-[1px] bg-[#F5EFC8]/10" />
           </h2>
-
-          <RSVPFlow />
 
           <motion.div
             variants={cardHoverVariants}
