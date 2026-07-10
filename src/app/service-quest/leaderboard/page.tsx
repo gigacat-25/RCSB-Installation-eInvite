@@ -96,8 +96,14 @@ export default function LeaderboardPage() {
       )
       .subscribe();
 
+    // 5-second polling fallback to guarantee live updates
+    const pollInterval = setInterval(() => {
+      fetchScores();
+    }, 5000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
   }, []);
 
