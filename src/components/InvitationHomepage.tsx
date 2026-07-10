@@ -589,6 +589,10 @@ export default function InvitationHomepage({ scrollContainerRef }: InvitationHom
           </a>
         </p>
         <p className="text-[9px] sm:text-[10px] font-sans tracking-[0.2em] uppercase text-[#A5BCD6]/25 font-light">
+          <Link href="/plants" className="hover:text-[#F5EFC8] hover:underline transition-colors duration-300">
+            Plant Care Guide
+          </Link>
+          <span className="mx-2 text-[#A5BCD6]/15">·</span>
           <Link href="/privacy" className="hover:text-[#F5EFC8] hover:underline transition-colors duration-300">
             Privacy Policy
           </Link>
