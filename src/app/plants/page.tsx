@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import NoiseTexture from "@/components/NoiseTexture";
+import { plantsData } from "@/lib/plantsData";
 
 // Care guide items
 const careGuidelines = [
@@ -12,9 +13,9 @@ const careGuidelines = [
     title: "Provide the Right Amount of Sunlight",
     icon: "☀️",
     details: [
-      { label: "Full sun (6–8 hours)", value: "Tulsi, lemongrass, neem" },
-      { label: "Partial shade (3–5 hours)", value: "Mint, brahmi" },
-      { label: "Bright indirect light", value: "Aloe vera (can also tolerate some direct morning sun)" },
+      { label: "Full sun (6–8 hours)", value: "Tulsi, Lemongrass, Amurth Balli, Kadu Basle" },
+      { label: "Partial shade (3–5 hours)", value: "Brami, Dodpatre, Mexican Mint, Insulin Plant" },
+      { label: "Bright indirect light", value: "Aloe Vera (can also tolerate some direct morning sun)" },
     ],
   },
   {
@@ -62,7 +63,7 @@ const careGuidelines = [
     icon: "✂️",
     details: [
       { label: "Maintenance", value: "Remove dead or yellow leaves." },
-      { label: "Bushier Growth", value: "Pinch the tips of herbs like tulsi and mint." },
+      { label: "Bushier Growth", value: "Pinch the tips of herbs like Tulsi and Mint." },
       { label: "Harvest Rule", value: "Don't remove more than one-third of the plant at a time." },
     ],
   },
@@ -88,54 +89,6 @@ const careGuidelines = [
   },
 ];
 
-// Plants care database
-interface PlantCare {
-  name: string;
-  sunlight: string;
-  water: string;
-  notes: string;
-}
-
-const defaultPlants: PlantCare[] = [
-  {
-    name: "Tulsi",
-    sunlight: "Full sun",
-    water: "Moderate",
-    notes: "Keep soil slightly moist, pinch flowers for more leaves.",
-  },
-  {
-    name: "Aloe Vera",
-    sunlight: "Bright sun",
-    water: "Low",
-    notes: "Water every 2–3 weeks; avoid waterlogging.",
-  },
-  {
-    name: "Mint",
-    sunlight: "Partial sun",
-    water: "Regular",
-    notes: "Keep soil moist; spreads quickly.",
-  },
-  {
-    name: "Lemongrass",
-    sunlight: "Full sun",
-    water: "Moderate",
-    notes: "Trim regularly to encourage new growth.",
-  },
-  {
-    name: "Brahmi",
-    sunlight: "Partial shade",
-    water: "High",
-    notes: "Prefers consistently moist soil.",
-  },
-];
-
-const secretPlant: PlantCare = {
-  name: "Ajwain",
-  sunlight: "Full sun",
-  water: "Moderate",
-  notes: "Water only when the soil begins to dry.",
-};
-
 export default function MedicinalPlantsPage() {
   const [search, setSearch] = useState("");
 
@@ -145,23 +98,22 @@ export default function MedicinalPlantsPage() {
 
   // Determine plants to show
   const isSecretUnlocked = search.trim().toLowerCase() === "/plant";
-  const allAvailablePlants = isSecretUnlocked 
-    ? [...defaultPlants, secretPlant] 
-    : defaultPlants;
+  const allAvailablePlants = plantsData.filter(
+    (plant) => isSecretUnlocked || !plant.isSecret
+  );
 
   // Filter based on search query
   const filteredPlants = allAvailablePlants.filter((plant) => {
-    if (isSecretUnlocked) {
-      return true; // Return all, including Ajwain
-    }
-    
-    // Normal case-insensitive search
     const query = search.toLowerCase();
     return (
       plant.name.toLowerCase().includes(query) ||
+      plant.kannadaName.toLowerCase().includes(query) ||
+      plant.scientificName.toLowerCase().includes(query) ||
+      plant.commonNames.toLowerCase().includes(query) ||
       plant.sunlight.toLowerCase().includes(query) ||
       plant.water.toLowerCase().includes(query) ||
-      plant.notes.toLowerCase().includes(query)
+      plant.careSummary.toLowerCase().includes(query) ||
+      plant.benefits.some((b) => b.toLowerCase().includes(query))
     );
   });
 
@@ -236,8 +188,160 @@ export default function MedicinalPlantsPage() {
           </p>
         </div>
 
-        {/* Section 1: Care Guidelines Grid with Embedded Images */}
-        <div className="space-y-12">
+        {/* Section 1: Interactive Plant Grid */}
+        <div className="space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F5EFC8]/10 pb-3">
+            <h2 className="text-xl sm:text-2xl font-light font-sans tracking-widest text-[#A5BCD6]/90 uppercase">
+              Select Your Plant Care Guide
+            </h2>
+            
+            {/* Search Box */}
+            <div className="relative w-full sm:max-w-[320px]">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A5BCD6]/40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search by plant name, benefits..."
+                value={search}
+                onChange={handleSearchChange}
+                className="w-full bg-[#231815]/50 border border-[#F5EFC8]/12 rounded-full pl-10 pr-4 py-2.5 text-sm text-[#F5EFC8] placeholder:text-white/20 focus:outline-none focus:border-[#F5EFC8]/35 transition-colors font-sans font-light"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <AnimatePresence mode="popLayout" initial={false}>
+              {filteredPlants.map((plant) => {
+                const isSecret = plant.isSecret;
+                const hasImages = plant.images && plant.images.length > 0;
+                return (
+                  <motion.div
+                    key={plant.slug}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Link href={`/plants/${plant.slug}`}>
+                      <motion.div
+                        whileHover={{ 
+                          y: -6, 
+                          borderColor: "rgba(245, 239, 200, 0.35)", 
+                          backgroundColor: "rgba(245, 239, 200, 0.03)" 
+                        }}
+                        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                        className={`relative overflow-hidden rounded-2xl border p-5 space-y-4 cursor-pointer shadow-lg transition-colors group flex flex-col justify-between h-full min-h-[260px] ${
+                          isSecret 
+                            ? "bg-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40" 
+                            : "border-[#F5EFC8]/15 bg-[#231815]/30"
+                        }`}
+                      >
+                        {shimmer}
+                        <div className="space-y-3">
+                          
+                          {/* Plant Image Header if available */}
+                          {hasImages ? (
+                            <div className="relative h-32 w-full rounded-xl overflow-hidden border border-[#F5EFC8]/10 bg-[#231815]/50 shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={plant.images[0]}
+                                alt={plant.name}
+                                className="w-full h-full object-cover opacity-70 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                              />
+                              <div className="absolute top-2 left-2 text-xl p-1 rounded-lg bg-[#231815]/85 border border-[#F5EFC8]/15 flex items-center justify-center w-8 h-8 select-none">
+                                {plant.icon}
+                              </div>
+                            </div>
+                          ) : (
+                            /* Fallback Icon Container */
+                            <div className="flex items-center gap-3">
+                              <div className="text-3xl p-2 rounded-xl bg-[#F5EFC8]/[0.02] border border-[#F5EFC8]/10 flex items-center justify-center w-12 h-12 shrink-0">
+                                {plant.icon}
+                              </div>
+                              <div className="overflow-hidden">
+                                <h3 className="font-serif italic text-transparent-yellow text-lg font-medium leading-tight group-hover:text-white transition-colors truncate">
+                                  {plant.name}
+                                </h3>
+                                <p className="text-[11px] text-[#A5BCD6]/55 font-normal truncate mt-0.5">
+                                  {plant.kannadaName} · <span className="italic">{plant.scientificName}</span>
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Title block when image is displayed above */}
+                          {hasImages && (
+                            <div className="overflow-hidden">
+                              <h3 className="font-serif italic text-transparent-yellow text-lg font-medium leading-tight group-hover:text-white transition-colors truncate">
+                                {plant.name}
+                              </h3>
+                              <p className="text-[11px] text-[#A5BCD6]/55 font-normal truncate mt-0.5">
+                                {plant.kannadaName} · <span className="italic">{plant.scientificName}</span>
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Care Summary */}
+                          <p className="text-xs sm:text-sm text-[#A5BCD6]/80 leading-relaxed font-light line-clamp-2">
+                            {plant.careSummary}
+                          </p>
+                        </div>
+
+                        {/* Badges / Bottom */}
+                        <div className="flex flex-wrap gap-1.5 pt-3 border-t border-[#F5EFC8]/10 items-center justify-between">
+                          <span className="text-[10px] text-[#F5EFC8] font-medium tracking-wider uppercase group-hover:underline flex items-center gap-1">
+                            Care Guide &rarr;
+                          </span>
+                          <div className="flex gap-1">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-sans border uppercase tracking-wider ${
+                              plant.sunlightLevel === "full" 
+                                ? "bg-amber-500/5 text-amber-400 border-amber-500/20" 
+                                : plant.sunlightLevel === "partial" 
+                                ? "bg-orange-500/5 text-orange-400 border-orange-500/20"
+                                : "bg-sky-500/5 text-sky-400 border-sky-500/20"
+                            }`}>
+                              ☀️ {plant.sunlightLevel}
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-blue-500/5 text-blue-400 border border-blue-500/20 px-2 py-0.5 text-[9px] font-sans uppercase tracking-wider">
+                              💧 {plant.waterLevel}
+                            </span>
+                          </div>
+                        </div>
+
+                        {isSecret && (
+                          <div className="absolute top-2 right-2">
+                            <span className="inline-flex items-center rounded bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-sans uppercase font-bold text-emerald-400 tracking-wider border border-emerald-500/30">
+                              Secret
+                            </span>
+                          </div>
+                        )}
+                      </motion.div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+              {filteredPlants.length === 0 && (
+                <div className="col-span-full py-16 text-center text-[#A5BCD6]/40 font-sans italic font-light">
+                  No plants match your search query.
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Secret hint banner when not unlocked */}
+          {!isSecretUnlocked && (
+            <div className="text-center pt-2">
+              <p className="text-[11px] font-mono text-[#A5BCD6]/30 uppercase tracking-widest">
+                💡 Psst... Type <span className="text-[#F5EFC8]/50">/plant</span> in the search bar to reveal secret knowledge.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Section 2: Essential Care Rules */}
+        <div className="space-y-12 pt-8">
           <h2 className="text-xl sm:text-2xl font-light font-sans tracking-widest text-[#A5BCD6]/90 border-b border-[#F5EFC8]/10 pb-3 uppercase flex items-center justify-between">
             <span>Essential Care Rules</span>
             <span className="w-10 h-[1px] bg-[#F5EFC8]/10" />
@@ -358,89 +462,6 @@ export default function MedicinalPlantsPage() {
               </div>
             </motion.div>
           </div>
-        </div>
-
-        {/* Section 2: Interactive Plant Database */}
-        <div className="space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F5EFC8]/10 pb-3">
-            <h2 className="text-xl sm:text-2xl font-light font-sans tracking-widest text-[#A5BCD6]/90 uppercase">
-              Common Medicinal Plants
-            </h2>
-            
-            {/* Search Box */}
-            <div className="relative w-full sm:max-w-[320px]">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A5BCD6]/40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search plants or type a code..."
-                value={search}
-                onChange={handleSearchChange}
-                className="w-full bg-[#231815]/50 border border-[#F5EFC8]/12 rounded-full pl-10 pr-4 py-2.5 text-sm text-[#F5EFC8] placeholder:text-white/20 focus:outline-none focus:border-[#F5EFC8]/35 transition-colors font-sans font-light"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-[#F5EFC8]/15 bg-[#231815]/30 backdrop-blur-md shadow-lg">
-            <table className="w-full border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-[#F5EFC8]/15 bg-[#F5EFC8]/[0.02]">
-                  <th className="p-4 font-sans font-normal uppercase tracking-wider text-xs text-[#A5BCD6]/60">Plant</th>
-                  <th className="p-4 font-sans font-normal uppercase tracking-wider text-xs text-[#A5BCD6]/60">Sunlight</th>
-                  <th className="p-4 font-sans font-normal uppercase tracking-wider text-xs text-[#A5BCD6]/60">Water</th>
-                  <th className="p-4 font-sans font-normal uppercase tracking-wider text-xs text-[#A5BCD6]/60">Care Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence initial={false}>
-                  {filteredPlants.map((plant) => {
-                    const isSecret = plant.name === "Ajwain";
-                    return (
-                      <motion.tr
-                        key={plant.name}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className={`border-b border-[#F5EFC8]/10 hover:bg-[#F5EFC8]/[0.01] transition-colors ${
-                          isSecret ? "bg-emerald-950/10 border-emerald-900/30" : ""
-                        }`}
-                      >
-                        <td className="p-4 font-serif italic text-transparent-yellow text-base font-medium flex items-center gap-2">
-                          {plant.name}
-                          {isSecret && (
-                            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-sans uppercase font-semibold text-emerald-400 tracking-wider border border-emerald-500/20 animate-pulse">
-                              Secret Unlocked
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-4 font-sans text-white/90">{plant.sunlight}</td>
-                        <td className="p-4 font-sans text-white/90">{plant.water}</td>
-                        <td className="p-4 font-sans text-[#A5BCD6]/90 leading-relaxed">{plant.notes}</td>
-                      </motion.tr>
-                    );
-                  })}
-                  {filteredPlants.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="p-12 text-center text-white/40 font-sans italic font-light">
-                        No plants match your search query.
-                      </td>
-                    </tr>
-                  )}
-                </AnimatePresence>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Secret hint banner when not unlocked */}
-          {!isSecretUnlocked && (
-            <div className="text-center pt-2">
-              <p className="text-[11px] font-mono text-[#A5BCD6]/30 uppercase tracking-widest">
-                💡 Psst... Type <span className="text-[#F5EFC8]/50">/plant</span> in the search bar to reveal secret knowledge.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Back Button */}

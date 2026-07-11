@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser, UserButton, SignOutButton } from "@clerk/nextjs";
 import { Html5Qrcode } from "html5-qrcode";
 import Link from "next/link";
-import { Trophy, Printer } from "lucide-react";
+import { Trophy, Printer, Download } from "lucide-react";
 import { EVENT, PRIMARY_CLUB } from "@/lib/constants";
+import QRCode from "qrcode";
+import { plantsData } from "@/lib/plantsData";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -502,9 +504,128 @@ interface DashboardProps {
   onCheckIn: (ref: string) => Promise<ScanResult>;
 }
 function Dashboard({ rsvps, onRetry, onCheckIn }: DashboardProps) {
+  const [activeTab, setActiveTab] = useState<"rsvps" | "plants">("rsvps");
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [plantQrs, setPlantQrs] = useState<Record<string, string>>({});
+  const [downloadingAllQrs, setDownloadingAllQrs] = useState(false);
+
+  // Generate plant QRs for UI display
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const origin = window.location.origin;
+      const qrs: Record<string, string> = {};
+      
+      const generateQrs = async () => {
+        for (const plant of plantsData) {
+          const targetUrl = `${origin}/plants/${plant.slug}`;
+          try {
+            const url = await QRCode.toDataURL(targetUrl, {
+              width: 250,
+              margin: 1,
+              color: {
+                dark: "#231815",
+                light: "#F5EFC8",
+              },
+              errorCorrectionLevel: "H",
+            });
+            qrs[plant.slug] = url;
+          } catch (err) {
+            console.error("Failed to generate QR for", plant.name, err);
+          }
+        }
+        setPlantQrs(qrs);
+      };
+      
+      generateQrs();
+    }
+  }, []);
+
+  const handleDownloadPlantQr = async (plant: typeof plantsData[0]) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://invite.rcsb.org";
+    const targetUrl = `${origin}/plants/${plant.slug}`;
+    
+    // Create offscreen canvas for high-quality printing
+    const canvas = document.createElement("canvas");
+    const qrSize = 600;
+    const padding = 50;
+    const textHeight = 140;
+    
+    canvas.width = qrSize + (padding * 2);
+    canvas.height = qrSize + (padding * 2) + textHeight;
+    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    
+    // Background fill
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Elegant frame border
+    ctx.strokeStyle = "#231815";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+    // Inner gold detail border
+    ctx.strokeStyle = "#4A2E27";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
+
+    // Temp canvas for QR generation
+    const tempCanvas = document.createElement("canvas");
+    await QRCode.toCanvas(tempCanvas, targetUrl, {
+      width: qrSize,
+      margin: 1,
+      color: {
+        dark: "#231815",
+        light: "#FFFFFF",
+      },
+      errorCorrectionLevel: "H",
+    });
+    
+    ctx.drawImage(tempCanvas, padding, padding);
+    
+    // Write text details
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#231815";
+    
+    // Plant Name (Bold, readable)
+    ctx.font = "bold 44px sans-serif";
+    ctx.fillText(plant.name, canvas.width / 2, qrSize + padding * 2 + 10);
+    
+    // Scientific name (Italic)
+    ctx.font = "italic 26px serif";
+    ctx.fillStyle = "#4A2E27";
+    ctx.fillText(plant.scientificName, canvas.width / 2, qrSize + padding * 2 + 50);
+
+    // Kannada Name (Local language script)
+    ctx.font = "bold 28px sans-serif";
+    ctx.fillStyle = "#231815";
+    ctx.fillText(plant.kannadaName, canvas.width / 2, qrSize + padding * 2 + 95);
+    
+    // Trigger download
+    const url = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `qr-${plant.slug}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadAllQrs = async () => {
+    setDownloadingAllQrs(true);
+    try {
+      // Loop and download all plants
+      for (const plant of plantsData) {
+        await handleDownloadPlantQr(plant);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    } finally {
+      setDownloadingAllQrs(false);
+    }
+  };
 
   const checkedIn = rsvps.filter((r) => r.checked_in_at).length;
   const withEmail = rsvps.filter((r) => r.email).length;
@@ -623,172 +744,289 @@ function Dashboard({ rsvps, onRetry, onCheckIn }: DashboardProps) {
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-6">
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { label: "Total RSVPs",        value: rsvps.length,  color: "text-[#F5EFC8]" },
-            { label: "Checked In",          value: checkedIn,      color: "text-emerald-400" },
-            { label: "With Email",          value: withEmail,      color: "text-cerulean-blue" },
-            { label: "Clubs Represented",   value: uniqueClubs,    color: "text-cerulean-blue" },
-          ].map((stat) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="rounded-xl border border-[#F5EFC8]/10 bg-[#231815]/50 backdrop-blur-md px-4 py-3 sm:px-5 sm:py-4 flex flex-col justify-between h-full space-y-1 shadow-sm"
-            >
-              <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.25em] text-[#A5BCD6]/50 font-light truncate leading-none">{stat.label}</p>
-              <p className={`text-2xl sm:text-3xl font-sans font-light ${stat.color} leading-none mt-1`}>{stat.value}</p>
-            </motion.div>
-          ))}
+        {/* Tab selection */}
+        <div className="flex gap-6 border-b border-[#F5EFC8]/10 pb-0.5 relative z-20">
+          <button
+            onClick={() => setActiveTab("rsvps")}
+            className={`pb-3 text-xs sm:text-sm font-sans uppercase tracking-[0.2em] transition-all font-medium border-b-2 cursor-pointer ${
+              activeTab === "rsvps" 
+                ? "text-[#F5EFC8] border-[#F5EFC8]" 
+                : "text-[#A5BCD6]/40 border-transparent hover:text-[#A5BCD6]/80"
+            }`}
+          >
+            Guest RSVPs
+          </button>
+          <button
+            onClick={() => setActiveTab("plants")}
+            className={`pb-3 text-xs sm:text-sm font-sans uppercase tracking-[0.2em] transition-all font-medium border-b-2 cursor-pointer ${
+              activeTab === "plants" 
+                ? "text-[#F5EFC8] border-[#F5EFC8]" 
+                : "text-[#A5BCD6]/40 border-transparent hover:text-[#A5BCD6]/80"
+            }`}
+          >
+            Plant QR Codes
+          </button>
         </div>
 
-        {/* Search & Actions Area */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#231815]/30 border border-[#F5EFC8]/8 p-3 rounded-2xl backdrop-blur-sm">
-          {/* Search box */}
-          <div className="relative w-full sm:max-w-[280px]">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A5BCD6]/40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search guests, clubs…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#231815]/50 border border-[#F5EFC8]/12 rounded-full pl-9 pr-4 py-2 text-xs text-[#F5EFC8] placeholder:text-white/20 focus:outline-none focus:border-[#F5EFC8]/35 transition-colors font-sans font-light"
-            />
-          </div>
+        {activeTab === "rsvps" ? (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {[
+                { label: "Total RSVPs",        value: rsvps.length,  color: "text-[#F5EFC8]" },
+                { label: "Checked In",          value: checkedIn,      color: "text-emerald-400" },
+                { label: "With Email",          value: withEmail,      color: "text-cerulean-blue" },
+                { label: "Clubs Represented",   value: uniqueClubs,    color: "text-cerulean-blue" },
+              ].map((stat) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="rounded-xl border border-[#F5EFC8]/10 bg-[#231815]/50 backdrop-blur-md px-4 py-3 sm:px-5 sm:py-4 flex flex-col justify-between h-full space-y-1 shadow-sm"
+                >
+                  <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.25em] text-[#A5BCD6]/50 font-light truncate leading-none">{stat.label}</p>
+                  <p className={`text-2xl sm:text-3xl font-sans font-light ${stat.color} leading-none mt-1`}>{stat.value}</p>
+                </motion.div>
+              ))}
+            </div>
 
-          {/* Control Buttons (Refresh + CSV moved out of sticky header) */}
-          <div className="flex items-center justify-between sm:justify-end gap-3">
-            <p className="text-[9px] uppercase tracking-[0.18em] text-[#A5BCD6]/45 font-light whitespace-nowrap">
-              {filtered.length} of {rsvps.length} entries
-            </p>
-
-            <div className="flex items-center gap-2">
-              {/* Refresh Button */}
-              <motion.button
-                onClick={onRetry}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Refresh List"
-                className="p-2 rounded-full border border-white/10 text-white/40 hover:border-white/20 hover:text-white/60 transition-all cursor-pointer bg-[#231815]/40"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            {/* Search & Actions Area */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#231815]/30 border border-[#F5EFC8]/8 p-3 rounded-2xl backdrop-blur-sm">
+              {/* Search box */}
+              <div className="relative w-full sm:max-w-[280px]">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#A5BCD6]/40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="M21 21l-4.35-4.35" />
                 </svg>
-              </motion.button>
+                <input
+                  type="text"
+                  placeholder="Search guests, clubs…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full bg-[#231815]/50 border border-[#F5EFC8]/12 rounded-full pl-9 pr-4 py-2 text-xs text-[#F5EFC8] placeholder:text-white/20 focus:outline-none focus:border-[#F5EFC8]/35 transition-colors font-sans font-light"
+                />
+              </div>
 
-              {/* Export CSV Button */}
+              {/* Control Buttons (Refresh + CSV moved out of sticky header) */}
+              <div className="flex items-center justify-between sm:justify-end gap-3">
+                <p className="text-[9px] uppercase tracking-[0.18em] text-[#A5BCD6]/45 font-light whitespace-nowrap">
+                  {filtered.length} of {rsvps.length} entries
+                </p>
+
+                <div className="flex items-center gap-2">
+                  {/* Refresh Button */}
+                  <motion.button
+                    onClick={onRetry}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Refresh List"
+                    className="p-2 rounded-full border border-white/10 text-white/40 hover:border-white/20 hover:text-white/60 transition-all cursor-pointer bg-[#231815]/40"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </motion.button>
+
+                  {/* Export CSV Button */}
+                  <motion.button
+                    onClick={handleDownloadCSV}
+                    disabled={downloading}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#F5EFC8]/25 bg-[#F5EFC8]/[0.03] text-[#F5EFC8] text-[10px] uppercase tracking-widest font-light transition-all hover:bg-[#F5EFC8]/[0.08] hover:border-[#F5EFC8]/50 disabled:opacity-50 cursor-pointer"
+                    title="Export CSV"
+                  >
+                    {downloading ? (
+                      <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-3 h-3 rounded-full border border-[#F5EFC8]/30 border-t-[#F5EFC8]/80 inline-block" />
+                    ) : (
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    )}
+                    <span>Export CSV</span>
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Guest Cards */}
+            <div className="block md:hidden space-y-3">
+              {filtered.length === 0 ? (
+                <div className="rounded-xl border border-[#F5EFC8]/10 bg-[#231815]/20 p-12 text-center">
+                  <p className="text-sm font-serif italic text-[#F5EFC8]/50">
+                    {search ? "No results match your search." : "No RSVPs yet."}
+                  </p>
+                </div>
+              ) : (
+                filtered.map((row) => (
+                  <GuestCard key={row.reference_number} row={row} />
+                ))
+              )}
+            </div>
+
+            {/* Desktop Guest Table */}
+            <div className="hidden md:block rounded-xl border border-[#F5EFC8]/10 overflow-hidden bg-[#231815]/40 backdrop-blur-md shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#F5EFC8]/8">
+                      {["Reference", "Full Name", "Club", "Designation", "Email", "Check-in Status", "Registered"].map((h) => (
+                        <th key={h} className="px-5 py-3.5 text-[9px] uppercase tracking-[0.25em] text-[#A5BCD6]/45 font-light font-sans whitespace-nowrap">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence>
+                      {filtered.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-5 py-16 text-center">
+                            <p className="text-sm font-serif italic text-[#F5EFC8]/50">
+                              {search ? "No results match your search." : "No RSVPs yet."}
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        filtered.map((row, i) => (
+                          <motion.tr
+                            key={row.reference_number}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.35) }}
+                            className="border-b border-[#F5EFC8]/5 hover:bg-[#F5EFC8]/[0.022] transition-colors"
+                          >
+                            <td className="px-5 py-3.5">
+                              <span className="font-mono text-[11px] text-[#F5EFC8]/70 tracking-wider">{row.reference_number}</span>
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <p className="text-sm font-sans font-light text-white/90 whitespace-nowrap">{row.full_name}</p>
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <p className="text-xs font-sans font-light text-[#A5BCD6]/75">{row.club_name}</p>
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <p className="text-xs font-sans font-light text-[#A5BCD6]/55">{row.designation ?? "—"}</p>
+                            </td>
+                            <td className="px-5 py-3.5">
+                              {row.email ? (
+                                <a href={`mailto:${row.email}`} className="text-xs font-sans font-light text-[#A5BCD6]/65 hover:text-[#F5EFC8] transition-colors">
+                                  {row.email}
+                                </a>
+                              ) : (
+                                <p className="text-xs font-sans font-light text-[#A5BCD6]/30">—</p>
+                              )}
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <CheckinBadge checkedInAt={row.checked_in_at} />
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <p className="text-[11px] font-sans font-light text-[#A5BCD6]/45 whitespace-nowrap">
+                                {formatDate(row.created_at)}
+                              </p>
+                            </td>
+                          </motion.tr>
+                        ))
+                      )}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Plants QR Codes Tab content */
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#231815]/30 border border-[#F5EFC8]/8 p-4 rounded-2xl backdrop-blur-sm">
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-serif italic text-transparent-yellow">Plant QR Code Catalog</h3>
+                <p className="text-xs text-[#A5BCD6]/60 font-light leading-relaxed">
+                  Download high-resolution print-ready cards containing the QR code and details for each plant to place on physical tags.
+                </p>
+              </div>
               <motion.button
-                onClick={handleDownloadCSV}
-                disabled={downloading}
+                onClick={handleDownloadAllQrs}
+                disabled={downloadingAllQrs}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#F5EFC8]/25 bg-[#F5EFC8]/[0.03] text-[#F5EFC8] text-[10px] uppercase tracking-widest font-light transition-all hover:bg-[#F5EFC8]/[0.08] hover:border-[#F5EFC8]/50 disabled:opacity-50 cursor-pointer"
-                title="Export CSV"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#F5EFC8]/45 bg-[#F5EFC8] text-xs text-[#231815] font-semibold uppercase tracking-wider hover:bg-[#faf6db] active:scale-95 disabled:opacity-50 transition-all duration-300 cursor-pointer shadow-[0_0_15px_rgba(245,239,200,0.15)] shrink-0"
               >
-                {downloading ? (
+                {downloadingAllQrs ? (
                   <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-3 h-3 rounded-full border border-[#F5EFC8]/30 border-t-[#F5EFC8]/80 inline-block" />
+                    className="w-3.5 h-3.5 rounded-full border border-[#231815]/30 border-t-[#231815] inline-block" />
                 ) : (
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                 )}
-                <span>Export CSV</span>
+                <span>{downloadingAllQrs ? "Downloading All..." : "Download All QRs"}</span>
               </motion.button>
             </div>
-          </div>
-        </div>
 
-        {/* ── RESPONSIVE GUEST LISTS ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {plantsData.map((plant, i) => {
+                const qrUrl = plantQrs[plant.slug];
+                const isSecret = plant.isSecret;
+                return (
+                  <motion.div
+                    key={plant.slug}
+                    initial={{ opacity: 0, scale: 0.93 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.35) }}
+                    className={`rounded-xl border p-4 flex flex-col justify-between items-center text-center space-y-3 shadow-md relative ${
+                      isSecret 
+                        ? "bg-emerald-950/10 border-emerald-500/20" 
+                        : "border-[#F5EFC8]/10 bg-[#231815]/40 backdrop-blur-sm"
+                    }`}
+                  >
+                    {/* QR Code Container */}
+                    <div className="relative p-2.5 rounded-lg bg-white flex items-center justify-center w-full aspect-square border border-[#F5EFC8]/15 shadow-sm">
+                      {qrUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={qrUrl} alt={`${plant.name} QR`} className="w-full h-full object-contain" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full border-2 border-t-[#231815] border-[#231815]/20 animate-spin" />
+                      )}
+                    </div>
 
-        {/* 1. Mobile Cards view (visible on mobile only) */}
-        <div className="block md:hidden space-y-3">
-          {filtered.length === 0 ? (
-            <div className="rounded-xl border border-[#F5EFC8]/10 bg-[#231815]/20 p-12 text-center">
-              <p className="text-sm font-serif italic text-[#F5EFC8]/50">
-                {search ? "No results match your search." : "No RSVPs yet."}
-              </p>
+                    {/* Plant Details */}
+                    <div className="space-y-0.5 w-full min-w-0">
+                      <p className="text-sm font-serif italic text-transparent-yellow truncate px-1">
+                        {plant.name}
+                      </p>
+                      <p className="text-[10px] text-[#A5BCD6]/60 truncate px-1">
+                        {plant.kannadaName}
+                      </p>
+                      <p className="text-[9px] text-[#A5BCD6]/40 italic truncate px-1">
+                        {plant.scientificName}
+                      </p>
+                    </div>
+
+                    {/* Download Button */}
+                    <motion.button
+                      onClick={() => handleDownloadPlantQr(plant)}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.96 }}
+                      className="w-full py-1.5 rounded-lg border border-[#F5EFC8]/20 bg-transparent hover:bg-[#F5EFC8]/5 text-[10px] text-[#F5EFC8] font-sans font-light transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      <span>Download QR</span>
+                    </motion.button>
+
+                    {isSecret && (
+                      <div className="absolute top-1 right-2">
+                        <span className="text-[7px] font-sans uppercase font-bold text-emerald-400 bg-emerald-500/10 px-1 border border-emerald-500/20 rounded">Secret</span>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
-          ) : (
-            filtered.map((row) => (
-              <GuestCard key={row.reference_number} row={row} />
-            ))
-          )}
-        </div>
-
-        {/* 2. Desktop Table view (visible on larger screens only) */}
-        <div className="hidden md:block rounded-xl border border-[#F5EFC8]/10 overflow-hidden bg-[#231815]/40 backdrop-blur-md shadow-lg">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#F5EFC8]/8">
-                  {["Reference", "Full Name", "Club", "Designation", "Email", "Check-in Status", "Registered"].map((h) => (
-                    <th key={h} className="px-5 py-3.5 text-[9px] uppercase tracking-[0.25em] text-[#A5BCD6]/45 font-light font-sans whitespace-nowrap">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-5 py-16 text-center">
-                        <p className="text-sm font-serif italic text-[#F5EFC8]/50">
-                          {search ? "No results match your search." : "No RSVPs yet."}
-                        </p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((row, i) => (
-                      <motion.tr
-                        key={row.reference_number}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.35) }}
-                        className="border-b border-[#F5EFC8]/5 hover:bg-[#F5EFC8]/[0.022] transition-colors"
-                      >
-                        <td className="px-5 py-3.5">
-                          <span className="font-mono text-[11px] text-[#F5EFC8]/70 tracking-wider">{row.reference_number}</span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <p className="text-sm font-sans font-light text-white/90 whitespace-nowrap">{row.full_name}</p>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <p className="text-xs font-sans font-light text-[#A5BCD6]/75">{row.club_name}</p>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <p className="text-xs font-sans font-light text-[#A5BCD6]/55">{row.designation ?? "—"}</p>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          {row.email ? (
-                            <a href={`mailto:${row.email}`} className="text-xs font-sans font-light text-[#A5BCD6]/65 hover:text-[#F5EFC8] transition-colors">
-                              {row.email}
-                            </a>
-                          ) : (
-                            <p className="text-xs font-sans font-light text-[#A5BCD6]/30">—</p>
-                          )}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <CheckinBadge checkedInAt={row.checked_in_at} />
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <p className="text-[11px] font-sans font-light text-[#A5BCD6]/45 whitespace-nowrap">
-                            {formatDate(row.created_at)}
-                          </p>
-                        </td>
-                      </motion.tr>
-                    ))
-                  )}
-                </AnimatePresence>
-              </tbody>
-            </table>
           </div>
-        </div>
+        )}
 
         {/* Footer */}
         <p className="text-center text-[9px] uppercase tracking-[0.28em] text-[#A5BCD6]/25 font-light pb-4">
